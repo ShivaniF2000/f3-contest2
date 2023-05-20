@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>Timezone Information</title>
+</head>
+<body>
+    <h1>Timezone Information</h1>
+
+    <div id="current-timezone">
+        <h2>Your Current Timezone</h2>
+        <p id="current-timezone-display"></p>
+    </div>
+
+    <div id="address-input">
+        <h2>Enter Address</h2>
+        <input type="text" id="address" placeholder="Enter an address">
+        <button onclick="getTimezoneByAddress()">Get Timezone</button>
+    </div>
+
+    <div id="address-timezone">
+        <h2>Timezone for Entered Address</h2>
+        <p id="address-timezone-display"></p>
+    </div>
+
+    <script>
+        // Fetch User's Current Timezone
+        function getCurrentTimezone() {
+            if (navigator.geolocation) {
+                navigator.geolocation.getCurrentPosition(successCallback, errorCallback);
+            } else {
+                console.log("Geolocation is not supported by this browser.");
+            }
+        }
+
+        function successCallback(position) {
+            var latitude = position.coords.latitude;
+            var longitude = position.coords.longitude;
+
+            //  Fetch timezone using Geoapify API
+            fetchTimezone(latitude, longitude, "current-timezone-display");
+        }
+
+        function errorCallback(error) {
+            console.log("Error getting current position: " + error.message);
+        }
+
+        // Retrieve Timezone by Address
+        function getTimezoneByAddress() {
+            var address = document.getElementById("address").value;
+
+            // Use geocoding API to get coordinates from address
+            fetchCoordinates(address)
+                .then(function (data) {
+                    var latitude = data.features[0].geometry.coordinates[1];
+                    var longitude = data.features[0].geometry.coordinates[0];
+
+                    // Step 1: Fetch timezone using Geoapify API
+                    fetchTimezone(latitude, longitude, "address-timezone-display");
+                })
+                .catch(function (error) {
+                    console.log("Error retrieving coordinates: " + error);
+                });
+        }
+
+        // Helper function to fetch coordinates from address
+        function fetchCoordinates(address) {
+            var url = "https://api.geoapify.com/v1/geocode/search?text=" + address + "&apiKey=YOUR_API_KEY";
+
+            return fetch(url)
+                .then(function (response) {
+                    return response.json();
+                });
+        }
+
+        // Helper function to fetch timezone using coordinates
+        function fetchTimezone(latitude, longitude, displayId) {
+            var url = "https://api.geoapify.com/v1/timezone?lat=" + latitude + "&lon=" + longitude + "&apiKey=YOUR_API_KEY";
+
+            fetch(url)
+                .then(function (response) {
+                    return response.json();
+                })
+                .then(function (data) {
+                    var timezone = data.timezone;
+
+                    // Display the timezone
+                    document.getElementById(displayId).textContent = timezone;
+                })
+                .catch(function (error) {
+                    console.log("Error retrieving timezone: " + error);
+                });
+        }
+
+        // Fetch user's current timezone on page load
+        getCurrentTimezone();
+    </script>
+</body>
+</html>
